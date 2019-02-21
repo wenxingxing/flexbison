@@ -58,7 +58,7 @@ struct fncall { /* built-in function */
 struct ufncall { /* user function */
   int nodetype;
   struct ast* l;
-  struct symbols* s;
+  struct symbol* s;
 };
 
 struct flow {

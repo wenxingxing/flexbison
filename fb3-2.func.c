@@ -104,6 +104,7 @@ struct ast* newref(struct symbol* s) {
   }
   a->nodetype = 'N';
   a->s = s;
+  //   printf("new ref: %s\n", s->name);
   return (struct ast*)a;
 }
 
@@ -348,7 +349,6 @@ static double calluser(struct ufncall* f) {
   double *oldval, *newval;  /*saved arg values */
   double v;
   int nargs;
-  int i;
 
   if (!fn->func) {
     yyerror("call to undefined function", fn->name);
@@ -361,41 +361,33 @@ static double calluser(struct ufncall* f) {
 
   /* prepare to save them */
   oldval = (double*)malloc(nargs * sizeof(double));
-  newval = (double*)malloc(nargs * sizeof(double));
-  if (!oldval || !newval) {
+  if (!oldval) {
     yyerror("Out of space in %s", fn->name);
     return 0.0;
   }
 
   /* evaluate the arguments */
+  int i;
+  sl = fn->syms;
   for (i = 0; i < nargs; ++i) {
     if (!args) {
       yyerror("too few args in call to %s", fn->name);
       free(oldval);
-      free(newval);
       return 0.0;
     }
 
+    struct symbol* s = sl->sym;
+    oldval[i] = s->value;
+
     if (args->nodetype == 'L') {
-      newval[i] = eval(args->l);
+      s->value = eval(args->l);
       args = args->r;
     } else {
-      newval[i] = eval(args);
+      s->value = eval(args);
       args = NULL;
     }
-  }
-
-  /* save old values of dummies, assign new ones */
-  sl = fn->syms;
-  for (i = 0; i < nargs; ++i) {
-    struct symbol* s = sl->sym;
-
-    oldval[i] = s->value;
-    s->value = newval[i];
     sl = sl->next;
   }
-
-  free(newval);
 
   /* evaluate the function */
   v = eval(fn->func);
